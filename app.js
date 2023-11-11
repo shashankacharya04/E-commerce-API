@@ -1,0 +1,11 @@
+const express = require('express');
+const app= express();
+const bodyParser =require('body-parser');
+const userRoute = require('./routes/user');
+const itemRoute = require('./routes/items');
+const sellerRoute = require('./routes/sellers');
+app.use(bodyParser.json());
+app.use('/user',userRoute);
+app.use('/item',itemRoute);
+app.use('/seller',sellerRoute);
+module.exports= app;
