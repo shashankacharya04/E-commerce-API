@@ -1,9 +1,11 @@
 const express = require('express');
+const cors =require("cors");
 const app= express();
 const bodyParser =require('body-parser');
 const userRoute = require('./routes/user');
 const itemRoute = require('./routes/items');
 const sellerRoute = require('./routes/sellers');
+app.use(cors());
 app.use(bodyParser.json());
 app.use('/user',userRoute);
 app.use('/item',itemRoute);
