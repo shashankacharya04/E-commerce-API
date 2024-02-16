@@ -1,3 +1,4 @@
+const { response } = require('express');
 const models = require('../models');
 async function update(req,res){
     const itemid = req.params.itemid;
@@ -80,12 +81,19 @@ async function show(req,res){
         res.status(200).json({
             items:items
         });
-    
-   
 
+ }   
+ async function singleItem(req,res){
+    const item = await models.item.findOne({where:{item_id:req.params.itemid}})
+    const itemSeller =await models.sellers.findOne({where:{s_id:item.s_id}});
+    res.status(200).json({
+        item:item,
+        soldby:itemSeller
+       })
 }
 module.exports ={
     update:update,
     delete:pdelete,
-    show:show
+    show:show,
+    singleItem:singleItem
 }
