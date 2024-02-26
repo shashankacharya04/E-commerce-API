@@ -180,6 +180,7 @@ async function buy (req,res){
     const userEmail =userData.email;
     //console.log("useremail:",userEmail);
     const itemId = await models.item.findOne({where:{item_id:req.params.itemid}});
+    console.log("item id is",itemId);
     const user =await models.users.findOne({where:{email:userEmail}});
     //console.log("user balance",user.balance);
     b_price = (itemId.price)*req.body.stock;
@@ -203,28 +204,50 @@ async function buy (req,res){
                balance :mBalance
             });
         }
-        models.items_bought.create(itembuy).then(result=>{
-            
-            res.status(200).json({
-               message:"item bought successfully",
-               details:result
-            });
-            models.users.update(
-                {
-                    balance:mBalance
-                },
-                {
-                where:{
-                 email:userEmail
-                }
-                }
-             ).then().catch();
-        }).catch(error=>{
-            res.status(500).json({
-                message:"something went wrong while buying"
-             });
+        else if(itemId.stock-req.body.stock<=0){
+          res.status(400).json({
+            message:"no stock left"
+          })
+        }
+        else{
 
-        });
+            models.items_bought.create(itembuy).then((result)=>{
+                res.status(200).json({
+                    message:"item bought successfully",
+                    result:result
+                })
+                models.users.update(
+                    {
+                        balance:mBalance
+                    },
+                    {
+                    where:{
+                     email:userEmail
+                    }
+                    }
+                    
+                 );
+                }).then(()=>{
+                    models.item.update (
+                        {
+                            stock:itemId.stock-req.body.stock
+                        },
+                        {
+                            where:{
+                               item_id:"i2"
+                            }
+                        }
+                     )
+                })
+               .catch(error=>{
+                res.status(500).json({
+                    message:"something went wrong while buying",
+                    error: error
+                 });
+    
+            });
+        }
+       
     }
 } 
 

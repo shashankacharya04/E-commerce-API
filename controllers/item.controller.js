@@ -91,9 +91,59 @@ async function show(req,res){
         soldby:itemSeller
        })
 }
+ function comments (req,res){//doesnt work
+    const customer = req.userData;
+    console.log("customer is",customer);
+    console.log("params is",req.params.item_id);
+    const custID =req.userData.s_id || req.userData.user_id;
+    console.log("customer id is",custID);
+    if(!customer) return res.json({
+        message:"please login/sign in"
+    })
+    const addComment ={
+        item_id: req.params.itemid,
+       customer_id: custID,
+       customer_name:req.userData.sname|| req.userData.email,
+       comment:req.body.comment
+    }
+    // const addComment ={
+    //     itemId: "li",
+    //    customerId: "s1",
+    //    customerName:"hello",
+    //    comments:req.body.comments
+    // }
+    models.comments.create(addComment).then((result)=>{
+        res.status(200).json({
+            message:"comment added succesfully",
+            result:result
+        })
+    }).catch(err=>{
+        res.status(400).json({
+            message:"something went wrong",
+            err:err
+        })
+    })
+
+}
+function getcomments(req,res){
+    const userData = req.userData;
+    models.comments.findAll({where:{item_id:req.params.itemid}}).then(result=>{
+        res.status(200).json({
+            message:"comments are",
+            result:result
+        })
+    }).catch(err=>{
+        res.status(400).json({
+            message:"something went wrong",
+            error:err
+        })
+    })
+}
 module.exports ={
     update:update,
     delete:pdelete,
     show:show,
-    singleItem:singleItem
+    singleItem:singleItem,
+    comments:comments,
+    getcomments:getcomments
 }
