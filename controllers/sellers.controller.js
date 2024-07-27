@@ -171,7 +171,6 @@ function additem(req,res){
      const v= new validator();
      const validatorResponse =v.validate(additem,schema);
      if(validatorResponse !== true){
-        
         res.status(400).json({
            message:"validation failed",
            error:validatorResponse

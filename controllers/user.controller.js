@@ -2,6 +2,7 @@ const models = require('../models');
 const validator =require('fastest-validator');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const generateTokenAndSetCookie  = require("../utils/generateTokenAndSetCookie");
 function signin(req,res){
     models.users.findOne({where:{ email:req.body.email}}).then(result=>{
         console.log("result:",result)
@@ -35,11 +36,13 @@ function signin(req,res){
                            error:validatorResponse
                         });
                      } 
+                     generateTokenAndSetCookie.generateTokenAndSetCookie({email:req.body.email,user_id:req.body.userid},res);
                      models.users.create(user).then(result=>{
+                        
                       res.status(201).json({
                           message:"user created successfully",
                           result:result
-                      });
+                      })
                      }).catch(error=>{
                         res.status(500).json({
                             message:'something went wrong'
@@ -85,21 +88,43 @@ function login(req,res){
                             email: userDetails.email,
                             user_id: userDetails.user_id
                         };
-                        const token =jwt.sign(payload,process.env.JWT_KEY,function(err,token){
+                        // const token =jwt.sign(payload,process.env.JWT_KEY,function(err,token){
+                        //     res.status(200).json({
+                        //         message:"user logged in successfully",
+                        //         token:token
+                        //      }); 
+                        
+                        // })   
+                        if(generateTokenAndSetCookie.generateTokenAndSetCookie(payload,res)){
                             res.status(200).json({
-                                message:"user logged in successfully",
-                                token:token
-                             }); 
-                        })   
+                                message:"user logged in successfully"
+                            })
+                        }
+                        
                     }else{
                         res.status(400).json({
-                            message:"authentication failed"
+                            message:"password didnt match"
                          }); 
                     }
                 });
              }
           
     });
+}
+function logout (req,res){
+    try{
+        res.cookie("jwt","",{
+            maxAge:0
+        })
+        res.status(200).json({
+            message:"logged out successfully"
+        })
+    }
+    catch(error){
+         console.log("error while logging out",error)
+    }
+   
+    
 }
 function updateUser(req,res){
     const userData= req.userData;
@@ -174,6 +199,7 @@ function updateUser(req,res){
        });
 }
 */
+
 async function buy (req,res){
     const userData =req.userData;
     console.log("userdata:",userData);
@@ -275,6 +301,7 @@ async function profile(req,res){
 module.exports ={
     signin:signin,
     login:login,
+    logout:logout,
     update:updateUser,
     buy:buy,
     profile:profile

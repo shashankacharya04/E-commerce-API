@@ -1,5 +1,6 @@
 const { response } = require('express');
 const models = require('../models');
+const crypto = require("crypto");
 async function update(req,res){
     const itemid = req.params.itemid;
     const sellerData = req.userData;
@@ -91,19 +92,20 @@ async function show(req,res){
         soldby:itemSeller
        })
 }
- function comments (req,res){//doesnt work
-    const customer = req.userData;
-    console.log("customer is",customer);
-    console.log("params is",req.params.item_id);
+ function comments (req,res){
     const custID =req.userData.s_id || req.userData.user_id;
     console.log("customer id is",custID);
-    if(!customer) return res.json({
-        message:"please login/sign in"
-    })
+    let uuid =crypto.randomUUID();
+
+    let appendedC = "c-" +uuid;
+   
+    let commentId = appendedC.substring(0,9);
+   
     const addComment ={
         item_id: req.params.itemid,
        customer_id: custID,
        customer_name:req.userData.sname|| req.userData.email,
+       comment_id:commentId,
        comment:req.body.comment
     }
     // const addComment ={
@@ -126,7 +128,6 @@ async function show(req,res){
 
 }
 function getcomments(req,res){
-    const userData = req.userData;
     models.comments.findAll({where:{item_id:req.params.itemid}}).then(result=>{
         res.status(200).json({
             message:"comments are",
@@ -139,11 +140,61 @@ function getcomments(req,res){
         })
     })
 }
+function deleteComment (req,res){
+    models.comments.destroy({where:{item_id:req.params.commentId}}).then(result=>{
+        res.status(200).json({
+            message:"comment deleted successfully",
+            result:result
+        })
+    }).catch(err=>{
+        res.status(400).json({
+            message:"error while deleting",
+            error:err
+        })
+    })
+}
+async function addToCart(req,res){
+    const userdata = req.userData;
+    console.log("userData is",userdata);
+    const itemId =req.params.itemId;
+    try{
+        const itemDet = await models.item.findOne({where:{
+            item_id:itemId
+        }})
+        console.log("item details is",itemDet.dataValues.item_name);
+        const cartitem ={
+            item_id:req.params.itemId,
+            user_id:userdata.user_id,
+            item_name:itemDet.dataValues.item_name
+        }
+        
+        models.Cart.create(cartitem).then(result=>{
+            res.status(200).json({
+                message:"added to cart",
+                result:result
+            })
+        }).catch(err=>{
+            res.status(400).json({
+                message:"somthing went wrong",
+                error:err
+            })
+        })
+    }catch(err){
+        res.json({
+            erroris:err
+        })
+    }
+   
+  
+   
+}
 module.exports ={
     update:update,
     delete:pdelete,
     show:show,
     singleItem:singleItem,
     comments:comments,
-    getcomments:getcomments
+    getcomments:getcomments,
+    deleteComment:deleteComment,
+    addToCart:addToCart
 }
