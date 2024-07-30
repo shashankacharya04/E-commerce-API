@@ -1,8 +1,11 @@
 const models = require('../models');
+const generateTokenAndSetCookie = require("../utils/generateTokenAndSetCookie");
 const validator =require('fastest-validator');
 const bcrypt =require('bcryptjs');
 const jwt =require('jsonwebtoken');
-const uuidv4 =require("uuidv4");
+const cloudinary = require ('cloudinary').v2;
+
+
 async function signin(req,res){
     const sellerDet= await models.sellers.findOne({where:{s_name:req.body.sname}});
     console.log('sellerdetails:',sellerDet)
@@ -32,6 +35,8 @@ async function signin(req,res){
                        error:validatorResponse
                     });
                  } 
+                 generateTokenAndSetCookie.generateTokenAndSetCookie({s_id:req.body.sid,
+                    s_name:req.body.sname},res)
                  models.sellers.create(seller).then(result=>{
                   res.status(201).json({
                       message:"logged in as seller",
@@ -80,13 +85,18 @@ async function signin(req,res){
                s_id:loginDet.s_id,
                s_name:loginDet.s_name 
             };
-            jwt.sign(payload,process.env.JWT_KEY,function(err,token){
+            if(generateTokenAndSetCookie.generateTokenAndSetCookie(payload,res)){
                 res.status(200).json({
                     message:"user logged in successfully",
-                    sellerToken:token
                  });
-            });
-            console.log()
+            }
+
+            // jwt.sign(payload,process.env.JWT_KEY,function(err,token){
+            //     res.status(200).json({
+            //         message:"user logged in successfully",
+            //         sellerToken:token
+            //      });
+            // });
         }else{
             res.status(400).json({
                 message:"invalid username/password"
@@ -150,11 +160,16 @@ function updateUser(req,res){
      });
  
 }
-function additem(req,res){
+async function additem(req,res){
     const sellerData =req.userData
-    console.log("uuid is",uuidv4);
+    console.log("sellerdata",sellerData);
+    // const itemImage = req.body.itemImage;
+    // console.log("itemIMage",itemImage);
+    // const img = await cloudinary.uploader.upload(itemImage);
+    // console.log("image after",img);
+    const itemImage = req.body.itemImage;
+    const item_image = await cloudinary.uploader.upload(itemImage);
     const additem ={
-            //seller_id(s_id) should be decoded from the token
             s_id:sellerData.s_id,
             item_id:req.body.itemid,
             item_name:req.body.itemname,
@@ -163,9 +178,10 @@ function additem(req,res){
     }
     const schema ={
         item_id:{type:"string",optional:true,max:10},
+        item_image:{type:"string",optional:true,max:10000},
         item_name:{type:"string",optional:true,max:30},
-        price:{type:"string",optional:true,max:20000},
-        stock:{type:"string",optional:true}
+        price:{type:"number",optional:true,max:20000},
+        stock:{type:"number",optional:true}
 
      }
      const v= new validator();
@@ -176,6 +192,7 @@ function additem(req,res){
            error:validatorResponse
         });
      } else{
+      additem.item_image = item_image.secure_url
         models.item.create(additem).then(result=>{
             console.log(result)
             res.status(200).json({
