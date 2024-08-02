@@ -4,28 +4,44 @@ const validator =require('fastest-validator');
 const bcrypt =require('bcryptjs');
 const jwt =require('jsonwebtoken');
 const cloudinary = require ('cloudinary').v2;
-
-
+const {v4:uuid} =require("uuid")
 async function signin(req,res){
+    const randomval = uuid()
+    const sid = "S" + randomval.substring(0,8);
     const sellerDet= await models.sellers.findOne({where:{s_name:req.body.sname}});
+    console.log("seller det uis",sellerDet)
     console.log('sellerdetails:',sellerDet)
     if(sellerDet !== null){
         res.status(400).json({
             message:"user already exists"
         });
     } else{
+        let reqProfPic
+    if(req.body.profile_pic=="" || req.body.profile_pic== null){
+         reqProfPic = "https://avatar.iran.liara.run/public/job/operator/male"
+    } else{
+        // console.log("req.body",req.body.profile_pic)
+      data=await cloudinary.uploader.upload(req.body.profile_pic) ;
+      console.log("req prof pic is",data)
+      reqProfPic= data.secure_url;
+      
+
+    }
         bcrypt.genSalt(10,function(error,salt){
             bcrypt.hash(req.body.password,salt,function(error,hash){
                 const seller ={
-                    s_id:req.body.sid,
+                    s_id:sid,
+                    profile_pic:reqProfPic,
                     s_name:req.body.sname,
+                    email:req.body.email,
                     password:hash
                  }
                  const schema ={
                     s_id:{type:"string",optional:false,max:30},
+                    profile_pic:{type:"string",optional:false},
                     s_name:{type:"string",optional:false,max:30},
+                    email:{type:"string",optional:false},
                     password:{type:"string",optional:false}
-        
                  }
                  const v= new validator();
                  const validatorResponse =v.validate(seller,schema);
@@ -35,7 +51,7 @@ async function signin(req,res){
                        error:validatorResponse
                     });
                  } 
-                 generateTokenAndSetCookie.generateTokenAndSetCookie({s_id:req.body.sid,
+                 generateTokenAndSetCookie.generateTokenAndSetCookie({s_id:sid,
                     s_name:req.body.sname},res)
                  models.sellers.create(seller).then(result=>{
                   res.status(201).json({
@@ -44,7 +60,8 @@ async function signin(req,res){
                   });
                  }).catch(error=>{
                     res.status(500).json({
-                        message:'something went wrong'
+                        message:'something went wrong',
+                        error:error
                     });
                  });
             });//end hash
@@ -182,7 +199,6 @@ async function additem(req,res){
         item_name:{type:"string",optional:true,max:30},
         price:{type:"number",optional:true,max:20000},
         stock:{type:"number",optional:true}
-
      }
      const v= new validator();
      const validatorResponse =v.validate(additem,schema);

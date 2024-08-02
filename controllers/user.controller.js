@@ -2,62 +2,82 @@ const models = require('../models');
 const validator =require('fastest-validator');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const {v4:uuid} =require("uuid")
+const {v2:cloudinary} = require('cloudinary')
 const generateTokenAndSetCookie  = require("../utils/generateTokenAndSetCookie");
-function signin(req,res){
-    models.users.findOne({where:{ email:req.body.email}}).then(result=>{
-        console.log("result:",result)
-        if(result!=null){
-            res.status(200).json({
-                message:"user already exists"
-            });
-        }else{
-            bcryptjs.genSalt(10,function(error,salt){
-                bcryptjs.hash(req.body.password,salt,function(err,hash){
-                    const user ={
-                        user_id:req.body.userid,
-                        user_name:req.body.name,
-                        email:req.body.email,
-                        password:hash,
-                        balance:req.body.balance
-                     }
-                     const schema ={
-                        user_id:{type:"string",optional:false,max:30},
-                        user_name:{type:"string",optional:false,max:30},
-                        email:{type:"string",optional:false,max:30},
-                        password:{type:"string",optional:false},
-                        balance:{type:"number",optional:true}
-            
-                     }
-                     const v= new validator();
-                     const validatorResponse =v.validate(user,schema);
-                     if(validatorResponse !== true){
-                        res.status(400).json({
-                           message:"validation failed",
-                           error:validatorResponse
-                        });
-                     } 
-                     generateTokenAndSetCookie.generateTokenAndSetCookie({email:req.body.email,user_id:req.body.userid},res);
-                     models.users.create(user).then(result=>{
-                        
-                      res.status(201).json({
-                          message:"user created successfully",
-                          result:result
-                      })
-                     }).catch(error=>{
-                        res.status(500).json({
-                            message:'something went wrong'
-                        });
-                     });    
-
-                })//brypt hash
-            }); //bcrypt genSalt
-            
-        }//end of else
-    });//end of findone
-         
+async function signin(req,res){
+    try {
+        const randomval = uuid()
+        const userid = "u" + randomval.substring(0,8);
+        //const reqProfPic = req.body.profile_pic || req.body.gender == "male" ? "https://avatar.iran.liara.run/public/4" :"https://avatar.iran.liara.run/public/51"
+       let reqProfPic 
+        if(req.body.profile_pic == "" || req.body.profile_pic == null ){
+       reqProfPic = req.body.gender == "male"? "https://avatar.iran.liara.run/public/4" :"https://avatar.iran.liara.run/public/51"
+       }
+       else{
+        const data = await cloudinary.uploader.upload(req.body.profile_pic);
+        reqProfPic=data.secure_url;
+       }
+        models.users.findOne({where:{ email:req.body.email}}).then(result=>{
+            console.log("result:",result)
+            if(result!=null){
+                res.status(200).json({
+                    message:"user already exists"
+                });
+            }else{
+                bcryptjs.genSalt(10,function(error,salt){
+                    bcryptjs.hash(req.body.password,salt,function(err,hash){
+                        const user ={
+                            user_id:userid,
+                            user_name:req.body.name,
+                            profile_pic:reqProfPic,
+                            gender:req.body.gender,
+                            email:req.body.email,
+                            password:hash,
+                         }
+                         const schema ={
+                            user_id:{type:"string",optional:false,max:30},
+                            user_name:{type:"string",optional:false,max:30},
+                            email:{type:"string",optional:false,max:30},
+                            password:{type:"string",optional:false},
+                
+                         }
+                         const v= new validator();
+                         const validatorResponse =v.validate(user,schema);
+                         if(validatorResponse !== true){
+                            res.status(400).json({
+                               message:"validation failed",
+                               error:validatorResponse
+                            });
+                         } 
+                         generateTokenAndSetCookie.generateTokenAndSetCookie({email:req.body.email,user_id:userid},res);
+                         models.users.create(user).then(result=>{
+                            
+                          res.status(201).json({
+                              message:"user created successfully",
+                              result:result
+                          })
+                         }).catch(error=>{
+                            res.status(500).json({
+                                message:'something went wrong',
+                                error:error
+                            });
+                         });    
+    
+                    })//brypt hash
+                }); //bcrypt genSalt
+                
+            }//end of else
+        });//end of findone
+             
+    } catch (error) {
+        console.log("error in signin",error)
+    }
+   
          
 }
 function login(req,res){
+    
     const login ={
         email : req.body.email,
         password :req.body.password
