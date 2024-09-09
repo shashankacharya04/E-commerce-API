@@ -179,7 +179,10 @@ function updateUser(req,res){
 }
 async function additem(req,res){
     const sellerData =req.userData
+    
     console.log("sellerdata",sellerData);
+    const randomval = uuid()
+    const itemId = "I" + randomval.substring(0,8);
     // const itemImage = req.body.itemImage;
     // console.log("itemIMage",itemImage);
     // const img = await cloudinary.uploader.upload(itemImage);
@@ -187,8 +190,8 @@ async function additem(req,res){
     const itemImage = req.body.itemImage;
     const item_image = await cloudinary.uploader.upload(itemImage);
     const additem ={
-            s_id:sellerData.s_id,
-            item_id:req.body.itemid,
+            s_id:sellerData.payload.s_id,
+            item_id:itemId,
             item_name:req.body.itemname,
             price:req.body.price,
             stock:req.body.stock
