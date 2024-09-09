@@ -1,4 +1,7 @@
 'use strict';
+
+const { sequelize } = require('../models');
+
 /** @type {import('sequelize-cli').Migration} */
 module.exports = {
   async up(queryInterface, Sequelize) {
@@ -12,25 +15,17 @@ module.exports = {
       s_id: {
         type: Sequelize.STRING
       },
+      profile_pic:{
+        type:sequelize.STRING
+      },
       s_name: {
         type: Sequelize.TEXT
       },
+      email:{
+        type:sequelize.TEXT
+      },
       password: {
         type: Sequelize.STRING
-      },
-      item_id: {
-        type: Sequelize.STRING
-      },
-      item_name: {
-        type: Sequelize.TEXT
-      },
-      price: {
-        type: Sequelize.INTEGER,
-        allowNull:false
-      },
-      stock: {
-        type: Sequelize.INTEGER,
-        allowNull:false
       },
       createdAt: {
         allowNull: false,

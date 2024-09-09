@@ -18,6 +18,9 @@ module.exports = {
       item_name: {
         type: Sequelize.TEXT
       },
+      item_image: {
+        type: Sequelize.TEXT
+      },
       price: {
         type: Sequelize.INTEGER
       },

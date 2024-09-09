@@ -15,11 +15,17 @@ module.exports = {
       user_name: {
         type: Sequelize.STRING
       },
+      profile_pic:{
+        type:Sequelize.STRING
+      },
       email: {
         type: Sequelize.STRING
       },
       password: {
         type: Sequelize.STRING
+      },
+      gender:{
+        type:Sequelize.STRING
       },
       balance: {
         type: Sequelize.INTEGER
